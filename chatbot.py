@@ -11,6 +11,25 @@ from langgraph.graph import START, MessagesState, StateGraph
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 
+TEXTO = ("Eres un asistente experto en MITRE ATT&CK. "
+         "Proporcionas información clara y precisa sobre técnicas de ataque, "
+         "tácticas y contramedidas basadas en la base de conocimientos de MITRE. "
+         "También puedes recordar detalles relevantes de la conversación "
+         "para responder de manera más eficiente y contextualizada. "
+         "Usa un lenguaje sencillo y directo para ahorrar tokens. "
+         "Cuando respondas, sigue esta estructura:"
+         "\n1. Técnica relevante: Identifica la técnica o técnicas relacionadas con la consulta. "
+         "Proporciona el nombre, el ID de la técnica y la táctica asociada."
+         "\n2. Explicación: Describe cómo se relaciona el escenario con la técnica de MITRE ATT&CK "
+         "identificada."
+         "\n3. Mitigaciones: Proporciona pasos específicos y prácticos para mitigar los riesgos "
+         "relacionados con la técnica."
+         "\nEstructura tus respuestas de forma clara y profesional, "
+         "enfocándote en las necesidades del usuario."
+         "\nUsa un lenguaje sencillo, claro y directo para asegurar que el usuario"
+         " pueda implementar las recomendaciones fácilmente."
+        )
+
 # Cargar variables de entorno
 load_dotenv()
 embedding_model = OpenAIEmbeddings(model="text-embedding-3-small",
@@ -38,13 +57,10 @@ vector_store = load_index()
 # Configuración del modelo
 llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"])
 
-# Definir el grafo de estados
-workflow = StateGraph(state_schema=MessagesState)
-
 # Función para construir el contexto dinámico
-def build_context(query):
+def build_context(user_query):
     """
-    Recupera documentos relevantes y construye un contexto con descripciones adicionales.
+    Recupera documentos relevantes y construye un contexto enriquecido con datos relacionados.
 
     Args:
         query (str): La consulta del usuario.
@@ -52,23 +68,28 @@ def build_context(query):
     Returns:
         str: El contexto enriquecido.
     """
-    docs = vector_store.similarity_search(query, k=3)  # Recuperar los 3 documentos más relevantes
+    docs = vector_store.similarity_search(user_query, k=4)
     context = ""
     for doc in docs:
         mitigation_details = "\n".join(
-            [
-                f"- {m['name']}: {m['description']}"
-                for m in doc.metadata.get("mitigation_methods", [])
-            ]
+            [f"- {m.get('name', 'Sin nombre')}: {m.get('description', 'Descripción no disponible')}"
+             for m in doc.metadata.get("mitigations", [])]
         )
-        context += f"""{doc.page_content}
-Mitigation Details:
-{mitigation_details}
-"""
+        context += (
+            f"Técnica: {doc.metadata.get('name', 'Desconocida')} "
+            f"(ID: {doc.metadata.get('id', 'N/A')})\n"
+            f"Tácticas: {', '.join(doc.metadata.get('tactics', []))}\n"
+            f"Descripción: {doc.page_content}\n"
+            f"Detección: {doc.metadata.get('detection', 'No disponible')}\n"
+            f"Fuentes de datos: {', '.join(doc.metadata.get('datasources', []))}\n"
+            f"Permisos requeridos: {', '.join(doc.metadata.get('permissions_required', []))}\n"
+            f"Métodos de mitigación:\n{mitigation_details}\n"
+            f"URL: {doc.metadata.get('url', 'No disponible')}\n\n"
+        )
     return context
 
-# Función que llama al modelo
-def call_model(state: MessagesState):
+# Lógica del chatbot
+def call_model(message_state: MessagesState):
     """
     Llama al modelo de lenguaje con el estado actual de los mensajes.
 
@@ -78,56 +99,54 @@ def call_model(state: MessagesState):
     Returns:
         dict: Un diccionario con el historial de mensajes actualizado.
     """
-    query = state["messages"][-1].content  # La última consulta del usuario
-    context = build_context(query)
-    prompt = f"{TEXTO}\n\nContext:\n{context}\n\nQuestion: {query}"
-    response = llm.invoke([SystemMessage(content=prompt)])
-    return {"messages": response}
+    user_query = message_state["messages"][-1].content  # La última consulta del usuario
 
-# Añadir nodos y transiciones al grafo
+    # Construir historial de conversación
+    conversation_history = "\n".join([
+        f"Usuario: {msg.content}" if isinstance(msg, HumanMessage) else f"Asistente: {msg.content}"
+        for msg in message_state["messages"]
+    ])
+
+    # Construir contexto relevante
+    context = build_context(user_query)
+
+    # Generar el prompt con historial y contexto
+    prompt = (
+        f"{TEXTO}\n\nHistorial de conversación:\n{conversation_history}\n\n"
+        f"Contexto relevante:\n{context}\n\nPregunta: {user_query}"
+    )
+
+    # Llamar al modelo
+    model_response = llm.invoke([SystemMessage(content=prompt)])
+    response_content = model_response.content
+
+    # Agregar la respuesta al historial de mensajes
+    message_state["messages"].append(SystemMessage(content=response_content))
+    return {"messages": message_state["messages"]}
+
+# Configuración principal
+memory = MemorySaver()
+workflow = StateGraph(state_schema=MessagesState)
 workflow.add_edge(START, "model")
 workflow.add_node("model", call_model)
-
-# Añadir memoria al grafo
-memory = MemorySaver()
 app = workflow.compile(checkpointer=memory)
+config = {"configurable": {"thread_id": "session_001"}}
 
-# Configuración de la sesión actual (thread_id=1111)
-config = {"configurable": {"thread_id": "1111"}}
-
-# System prompt específico para MITRE ATT&CK
-TEXTO = ("Eres un asistente experto en MITRE ATT&CK. "
-         "Proporcionas información clara y precisa sobre técnicas de ataque,"
-         " tácticas y contramedidas basadas en la base de conocimientos de MITRE. "
-         "También puedes recordar detalles relevantes de la conversación "
-         " para responder de manera más eficiente y contextualizada. "
-         "Usa un lenguaje sencillo y directo para ahorrar tokens.")
-
-# Cargar el system prompt inicial en la memoria
-initial_output = app.invoke({"messages": [SystemMessage(TEXTO)]}, config)
-
-# Función principal para el chatbot
-def main():
-    """
-    Función principal para el chatbot experto en MITRE ATT&CK.
-    Maneja la entrada del usuario y proporciona respuestas basadas
-    en el grafo de estados configurado.
-    """
+if __name__ == "__main__":
+    # Función principal para interactuar con el chatbot
     print("\n======= CHATBOT EXPERTO EN MITRE ATT&CK =======")
     print("Hazme preguntas sobre tácticas, técnicas o contramedidas.")
     print("Finaliza la sesión con los comandos :salir, :exit o :terminar.")
     print("===============================================")
 
+    state = {"messages": [SystemMessage(content="Eres un asistente experto en MITRE ATT&CK.")]}
     while True:
         query = input("\nUsuario: ")
         if query.lower() in [":salir", ":exit", ":terminar"]:
             print("\nGracias por hablar conmigo. ¡Hasta luego!")
-            sys.exit()
+            break
 
-        input_messages = [HumanMessage(query)]
-        response = app.invoke({"messages": input_messages}, config)
+        state["messages"].append(HumanMessage(content=query))
+        response = app.invoke(state, config)
         print("\nAsistente:", end=" ")
-        response["messages"][-1].pretty_print()  # Mostrar la última respuesta
-
-if __name__ == "__main__":
-    main()
+        response["messages"][-1].pretty_print()
