@@ -1,0 +1,99 @@
+======= CHATBOT EXPERTO EN MITRE ATT&CK =======
+Hazme preguntas sobre tácticas, técnicas o contramedidas.
+Finaliza la sesión con los comandos :salir, :exit o :terminar.
+===============================================
+
+Usuario: Hola, me llamo Santi.
+
+Asistente: ================================== Ai Message ==================================
+
+¡Hola, Santi! ¿En qué puedo ayudarte hoy con respecto a MITRE ATT&CK?
+
+Usuario: Un administrador se ha visto una cuenta de usuario, la cual pertenece a un empleado que está de baja, ha sido utilizada para acceder a contenido sensible en horas extrañas.
+
+Asistente: ================================== Ai Message ==================================
+
+Eso suena preocupante. En este caso, podrías estar enfrentando una posible actividad maliciosa, como el uso indebido de credenciales. Aquí hay algunos pasos y técnicas de MITRE ATT&CK que podrías considerar:
+
+### Tácticas y Técnicas Relacionadas
+
+1. **Initial Access (Acceso Inicial)**:
+   - **Valid Accounts (Cuentas Válidas)**: El atacante podría estar utilizando la cuenta de un empleado que está de baja para acceder a recursos.
+
+2. **Execution (Ejecución)**:
+   - **Command-Line Interface (Interfaz de Línea de Comandos)**: Podrían estar ejecutando comandos a través de la línea de comandos para acceder a información sensible.
+
+3. **Persistence (Persistencia)**:
+   - **Account Manipulation (Manipulación de Cuentas)**: Un atacante podría haber cambiado configuraciones de la cuenta para mantener el acceso.
+
+4. **Exfiltration (Exfiltración)**:
+   - **Exfiltration Over Command and Control Channel (Exfiltración a través de un Canal de Comando y Control)**: Si se está enviando información fuera de la red, podría hacerse a través de un canal controlado.
+
+### Contramedidas
+
+1. **Revisión de Accesos**: Revisa los registros de acceso para identificar cuándo y cómo se accedió a la cuenta.
+
+2. **Desactivar la Cuenta**: Si la cuenta no es necesaria, desactívala inmediatamente para prevenir más accesos no autorizados.
+
+3. **Autenticación Multifactor (MFA)**: Implementa MFA para dificultar el acceso no autorizado.
+
+4. **Auditoría de Seguridad**: Realiza una auditoría de seguridad para identificar vulnerabilidades o configuraciones incorrectas.
+
+5. **Capacitación y Concienciación**: Asegúrate de que todo el personal esté consciente de las políticas de seguridad y del manejo de cuentas.
+
+Si necesitas más información sobre alguna técnica específica o cómo implementarlas, házmelo saber.
+
+Usuario: Ultimamente he recibido demasiados correos diciendo que quieren entrar a mi cuenta de Netflix y me han llegado sms de confirmacion de cambio de contraseña. Además, al entrar en mi cuenta hay perfiles nuevos que no he creado yo.
+
+Asistente: ================================== Ai Message ==================================
+
+Parece que podrías estar siendo víctima de un intento de **suplantación de identidad** (phishing) o de un **ataque de compromiso de cuenta**. Aquí hay algunas tácticas y técnicas de MITRE ATT&CK relacionadas con esta situación, así como recomendaciones para proteger tu cuenta:
+
+### Tácticas y Técnicas Relacionadas
+
+1. **Initial Access (Acceso Inicial)**:
+   - **Phishing**: Los correos electrónicos que recibes pueden ser intentos de phishing para obtener tus credenciales.
+
+2. **Credential Access (Acceso a Credenciales)**:
+   - **Credential Dumping**: Los atacantes pueden estar tratando de obtener tus credenciales a través de engaños.
+
+3. **Account Manipulation (Manipulación de Cuentas)**:
+   - **Compromiso de Cuenta**: La creación de perfiles nuevos en tu cuenta indica que alguien más tiene acceso.
+
+### Contramedidas
+
+1. **Cambia tu Contraseña**: Cambia tu contraseña inmediatamente y asegúrate de que sea fuerte y única.
+
+2. **Habilita la Autenticación Multifactor (MFA)**: Esto añade una capa extra de seguridad y dificulta el acceso no autorizado.
+
+3. **Revisa la Actividad de la Cuenta**: Verifica la actividad reciente en tu cuenta de Netflix para identificar accesos no autorizados.
+
+4. **Desconecta Dispositivos No Reconocidos**: Si Netflix te permite, desconecta cualquier dispositivo que no reconozcas.
+
+5. **Cuidado con los Correos Electrónicos**: No hagas clic en enlaces sospechosos y verifica la dirección del remitente. Si recibes correos sospechosos, márcalos como spam.
+
+6. **Contacta al Soporte de Netflix**: Informa a Netflix sobre el problema para que puedan ayudarte a asegurar tu cuenta.
+
+Si necesitas más detalles sobre alguna de estas recomendaciones, no dudes en preguntar.
+
+Usuario: Recuerdas mi nombre?
+
+Asistente: ================================== Ai Message ==================================
+
+Sí, Santi. ¿En qué más puedo ayudarte hoy?
+
+Usuario: Qué te he dicho que le pasaba a mi Netflix?
+
+Asistente: ================================== Ai Message ==================================
+
+Mencionaste que has estado recibiendo correos sobre intentos de acceso a tu cuenta de Netflix y SMS de confirmación de cambio de contraseña. Además, notaste que hay perfiles nuevos en tu cuenta que no has creado. ¿Te gustaría más información sobre cómo manejar esta situación o alguna otra cosa?
+
+Usuario: Muchas gracias, eso es todo.
+
+Asistente: ================================== Ai Message ==================================
+
+¡De nada, Santi! Si tienes más preguntas en el futuro o necesitas ayuda, no dudes en volver. ¡Cuídate!
+
+Usuario: :salir
+
+Gracias por hablar conmigo. ¡Hasta luego!
