@@ -26,11 +26,16 @@ def index_data(file_path):
 
     documents = []
     for entry in data:
+        mitigation_details = "\n".join(
+            [f"- {m['name']}: {m['description']}" for m in entry.get('mitigation_methods', [])]
+        )
         content = f"""Technique ID: {entry['id']}
 Name: {entry['name']}
 Description: {entry['description']}
+Detection: {entry['detection']}
 Tactics: {', '.join(entry['tactics'])}
-Mitigations: {', '.join([m['name'] for m in entry.get('mitigation_methods', [])])}"""
+Mitigations:
+{mitigation_details}"""
         metadata = {"url": entry['url'], "platforms": entry['platforms']}
         documents.append(Document(page_content=content, metadata=metadata))
 

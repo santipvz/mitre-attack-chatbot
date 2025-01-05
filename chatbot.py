@@ -41,6 +41,32 @@ llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"])
 # Definir el grafo de estados
 workflow = StateGraph(state_schema=MessagesState)
 
+# Función para construir el contexto dinámico
+def build_context(query):
+    """
+    Recupera documentos relevantes y construye un contexto con descripciones adicionales.
+
+    Args:
+        query (str): La consulta del usuario.
+
+    Returns:
+        str: El contexto enriquecido.
+    """
+    docs = vector_store.similarity_search(query, k=3)  # Recuperar los 3 documentos más relevantes
+    context = ""
+    for doc in docs:
+        mitigation_details = "\n".join(
+            [
+                f"- {m['name']}: {m['description']}"
+                for m in doc.metadata.get("mitigation_methods", [])
+            ]
+        )
+        context += f"""{doc.page_content}
+Mitigation Details:
+{mitigation_details}
+"""
+    return context
+
 # Función que llama al modelo
 def call_model(state: MessagesState):
     """
@@ -52,8 +78,10 @@ def call_model(state: MessagesState):
     Returns:
         dict: Un diccionario con el historial de mensajes actualizado.
     """
-    response = llm.invoke(state["messages"])
-    # Actualizar el historial de mensajes con la respuesta
+    query = state["messages"][-1].content  # La última consulta del usuario
+    context = build_context(query)
+    prompt = f"{TEXTO}\n\nContext:\n{context}\n\nQuestion: {query}"
+    response = llm.invoke([SystemMessage(content=prompt)])
     return {"messages": response}
 
 # Añadir nodos y transiciones al grafo
@@ -74,9 +102,9 @@ TEXTO = ("Eres un asistente experto en MITRE ATT&CK. "
          "También puedes recordar detalles relevantes de la conversación "
          " para responder de manera más eficiente y contextualizada. "
          "Usa un lenguaje sencillo y directo para ahorrar tokens.")
-prompt_base = SystemMessage(TEXTO)
+
 # Cargar el system prompt inicial en la memoria
-initial_output = app.invoke({"messages": [prompt_base]}, config)
+initial_output = app.invoke({"messages": [SystemMessage(TEXTO)]}, config)
 
 # Función principal para el chatbot
 def main():
