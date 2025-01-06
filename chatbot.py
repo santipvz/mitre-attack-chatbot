@@ -130,7 +130,7 @@ workflow = StateGraph(state_schema=MessagesState)
 workflow.add_edge(START, "model")
 workflow.add_node("model", call_model)
 app = workflow.compile(checkpointer=memory)
-config = {"configurable": {"thread_id": "session_001"}}
+config = {"configurable": {"thread_id": "1111"}}
 
 if __name__ == "__main__":
     # Función principal para interactuar con el chatbot
@@ -141,12 +141,12 @@ if __name__ == "__main__":
 
     state = {"messages": [SystemMessage(content="Eres un asistente experto en MITRE ATT&CK.")]}
     while True:
-        query = input("\nUsuario: ")
+        query = input("\n>> Usuario: ")
         if query.lower() in [":salir", ":exit", ":terminar"]:
             print("\nGracias por hablar conmigo. ¡Hasta luego!")
             break
 
         state["messages"].append(HumanMessage(content=query))
         response = app.invoke(state, config)
-        print("\nAsistente:", end=" ")
+        print("\n>> Asistente:", end=" ")
         response["messages"][-1].pretty_print()
