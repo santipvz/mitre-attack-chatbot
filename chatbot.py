@@ -1,5 +1,5 @@
 """
-Implementación de un chatbot experto en MITRE ATT&CK con OpenAI, Langchain y FAISS.
+Implementación de un chatbot experto en MITRE ATT&CK con OpenAI, Langchain y Chroma.
 """
 
 import os
@@ -9,13 +9,15 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
+from langchain_chroma import Chroma
+
 
 TEXTO = ("Eres un asistente experto en MITRE ATT&CK. "
          "Proporcionas información clara y precisa sobre técnicas de ataque, "
          "tácticas y contramedidas basadas en la base de conocimientos de MITRE. "
          "También puedes recordar detalles relevantes de la conversación "
-         "para responder de manera más eficiente y contextualizada. "
+         "para responder de manera más eficiente y contextualizada "
+         "en caso de que se pregunten casos anteriormente vistos."
          "Usa un lenguaje sencillo y directo para ahorrar tokens. "
          "Cuando respondas, sigue esta estructura:"
          "\n1. Técnica relevante: Identifica la técnica o técnicas relacionadas con la consulta. "
@@ -44,11 +46,14 @@ def load_index():
         local_vector_store: El índice cargado desde el almacenamiento local.
     """
     try:
-        local_vector_store = FAISS.load_local("vector_store_index",
-                                              embedding_model, allow_dangerous_deserialization=True)
+        local_vector_store = Chroma(
+            collection_name="mitre_attack_techniques",
+            embedding_function=embedding_model,
+            persist_directory="vector_store_mitre"
+        )
         print("Índice cargado correctamente.")
         return local_vector_store
-    except (FileNotFoundError, ValueError) as error:
+    except Exception as error:
         print("Error al cargar el índice:", error)
         sys.exit("Asegúrate de haber generado el índice correctamente con el módulo de indexación.")
 
@@ -68,7 +73,7 @@ def build_context(user_query):
     Returns:
         str: El contexto enriquecido.
     """
-    docs = vector_store.similarity_search(user_query, k=4)
+    docs = vector_store.similarity_search(user_query, k=6)
     context = ""
     for doc in docs:
         mitigation_details = "\n".join(
@@ -78,11 +83,11 @@ def build_context(user_query):
         context += (
             f"Técnica: {doc.metadata.get('name', 'Desconocida')} "
             f"(ID: {doc.metadata.get('id', 'N/A')})\n"
-            f"Tácticas: {', '.join(doc.metadata.get('tactics', []))}\n"
+            f"Tácticas: {doc.metadata.get('tactics', 'Desconocida')}\n"
             f"Descripción: {doc.page_content}\n"
             f"Detección: {doc.metadata.get('detection', 'No disponible')}\n"
-            f"Fuentes de datos: {', '.join(doc.metadata.get('datasources', []))}\n"
-            f"Permisos requeridos: {', '.join(doc.metadata.get('permissions_required', []))}\n"
+            f"Fuentes de datos: {doc.metadata.get('datasources', 'No disponible')}\n"
+            f"Permisos requeridos: {doc.metadata.get('permissions_required', 'No disponible')}\n"
             f"Métodos de mitigación:\n{mitigation_details}\n"
             f"URL: {doc.metadata.get('url', 'No disponible')}\n\n"
         )

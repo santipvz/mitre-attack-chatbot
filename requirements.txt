@@ -4,4 +4,4 @@ langchain_core
 langchain_openai
 langgraph
 python-dotenv
-faiss-cpu
+chormadb

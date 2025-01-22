@@ -1,73 +1,99 @@
 """
-Este módulo indexa datos de un archivo JSON y almacena embeddings en un almacén vectorial FAISS.
+Este módulo indexa técnicas MITRE ATT&CK desde un archivo JSON utilizando embeddings y Chroma.
 """
 
-import json
-from langchain.schema import Document
+import sys
+import os
+import argparse
+from dotenv import load_dotenv
+
+from langchain_community.document_loaders import JSONLoader
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_chroma import Chroma
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_openai import OpenAIEmbeddings
-from langchain_community.vectorstores import FAISS
 
-# Configurar embeddings
-embedding_model = OpenAIEmbeddings(model="text-embedding-3-small")
-
-def process_json(file_path):
+def main(arguments):
     """
-    Procesa el archivo JSON con el listado de técnicas y subtécnicas de MITRE ATT&CK.
-    Crea documentos para almacenar en un vector store.
+    Función principal para indexar técnicas MITRE ATT&CK desde un archivo JSON
+    utilizando embeddings y Chroma.
 
     Args:
-        file_path (str): Ruta al archivo JSON.
-
-    Returns:
-        list[Document]: Lista de documentos procesados.
+        arguments (argparse.Namespace): Argumentos de la línea de comandos.
     """
-    with open(file_path, "r", encoding="utf-8") as file:
-        data = json.load(file)
-
-    documents = []
-    for entry in data:
-        # Construir contenido principal
-        mitigation_details = "\n".join(
-            [f"- {m.get('name', 'Sin nombre')}: {m.get('description', 'Descripción no disponible')}"
-             for m in entry.get("mitigation_methods", [])]
-        )
-        page_content = (
-            f"Technique Name: {entry.get('name', 'Desconocido')}\n"
-            f"Description: {entry.get('description', 'Descripción no disponible')}\n"
-            f"Detection: {entry.get('detection', 'No disponible')}\n"
-            f"Mitigation Methods:\n{mitigation_details}"
+    if os.path.exists(arguments.vector_store):
+        sys.exit(
+            f"El índice {arguments.vector_store} ya existe, no se han indexado nuevos documentos.\n"
+            "Programa finalizado"
         )
 
-        # Construir metadatos
-        metadata = {
-            "id": entry["id"],
-            "url": entry.get("url", "No disponible"),
-            "tactics": entry.get("tactics", []),
-            "platforms": entry.get("platforms", []),
-            "datasources": entry.get("datasources", []),
-            "permissions_required": entry.get("permissions_required", [])
-        }
+    print("(1) Cargando documentos ...")
+    path_documentos = arguments.techniques
 
-        # Crear documento
-        documents.append(Document(page_content=page_content, metadata=metadata))
+    def extraer_metadatos(record: dict, metadata: dict) -> dict:
+        metadata['id'] = record.get('id', 'Desconocido')
+        metadata['name'] = record.get('name', 'Sin nombre')
+        metadata['url'] = record.get('url', 'No disponible')
+        metadata['tactics'] = ', '.join(record.get('tactics', []))
+        metadata['platforms'] = ', '.join(record.get('platforms', []))
+        metadata['datasources'] = ', '.join(record.get('datasources', []))
+        metadata['permissions_required'] = ', '.join(record.get('permissions_required', []))
+        return metadata
 
-    return documents
 
-def index_data(file_path, output_path):
-    """
-    Procesa datos y los almacena en un almacén vectorial FAISS.
+    loader = JSONLoader(
+        file_path=path_documentos,
+        jq_schema='.[]',
+        text_content=False,
+        content_key='description',
+        metadata_func=extraer_metadatos
+    )
 
-    Args:
-        file_path (str): Ruta al archivo JSON con los datos a indexar.
-        output_path (str): Ruta donde se guardará el índice FAISS.
-    """
-    documents = process_json(file_path)
-    vector_store = FAISS.from_documents(documents, embedding_model)
-    vector_store.save_local(output_path)
-    print(f"Índice creado y almacenado localmente en '{output_path}'.")
+    docs = loader.load()
+    print(f"\t- {len(docs)} documentos cargados")
 
-if __name__ == "__main__":
-    # Procesar archivo y almacenar índice
-    json_file_path = "techniques_enterprise_attack.json"  # Ruta al archivo JSON
-    output_index_path = "vector_store_index"  # Carpeta de salida para el índice FAISS
-    index_data(json_file_path, output_index_path)
+    print("(2) Pre-procesando documentos ...")
+    if arguments.openai:
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=1024, chunk_overlap=64)
+    else:
+        text_splitter = RecursiveCharacterTextSplitter(chunk_size=256, chunk_overlap=64)
+
+    all_splits = text_splitter.split_documents(docs)
+    print(f"\t- {len(all_splits)} chunks creados")
+
+    print("(3) Indexando documentos ...")
+    if arguments.openai:
+        load_dotenv()
+        embeddings = OpenAIEmbeddings(
+            model="text-embedding-3-small", api_key=os.environ["OPENAI_API_KEY"]
+        )
+    else:
+        embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+    vector_store = Chroma(
+        collection_name="mitre_attack_techniques",
+        embedding_function=embeddings,
+        persist_directory=arguments.vector_store
+    )
+    vector_store.add_documents(documents=all_splits)
+    print(f"\t- índice {arguments.vector_store} creado")
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Indexación de técnicas MITRE ATT&CK en formato JSON con embeddings y Chroma'
+    )
+    parser.add_argument('-t', '--techniques',
+                        type=str, default='techniques_enterprise_attack.json', required=False,
+                        help='Path al fichero con las técnicas de MITRE ATT&CK en formato JSON')
+    parser.add_argument('-v', '--vector-store',
+                        type=str, default='chroma_mitre_attack', required=False,
+                        help='Path al directorio con el vector store Chroma (lo crea si no existe)')
+    parser.add_argument('-o', '--openai',
+                        action='store_true', required=False, default=True,
+                        help='Usa los embedding model del API de OpenAI')
+    parser.add_argument('-s', '--sentence-transformers',
+                        action='store_true', required=False, default=False,
+                        help='Usa los embedding models locales de Sentence Transformers')
+
+    args = parser.parse_args()
+    main(args)
