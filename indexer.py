@@ -86,7 +86,7 @@ if __name__ == '__main__':
                         type=str, default='techniques_enterprise_attack.json', required=False,
                         help='Path al fichero con las técnicas de MITRE ATT&CK en formato JSON')
     parser.add_argument('-v', '--vector-store',
-                        type=str, default='chroma_mitre_attack', required=False,
+                        type=str, default='vector_store_mitre', required=False,
                         help='Path al directorio con el vector store Chroma (lo crea si no existe)')
     parser.add_argument('-o', '--openai',
                         action='store_true', required=False, default=True,

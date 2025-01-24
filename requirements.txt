@@ -1,7 +1,13 @@
+chromadb
+jq
 langchain
-langchain_community
+langchain-chroma
+langchain-community
 langchain_core
+langchain-huggingface
+langchain-mistralai
 langchain_openai
+langchain-text-splitters
+langchain_community
 langgraph
 python-dotenv
-chormadb

@@ -4,13 +4,13 @@ Implementación de un chatbot experto en MITRE ATT&CK con OpenAI, Langchain y Ch
 
 import os
 import sys
+import argparse
 from dotenv import load_dotenv
 from langchain_core.messages import HumanMessage, SystemMessage
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import START, MessagesState, StateGraph
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_chroma import Chroma
-
 
 TEXTO = ("Eres un asistente experto en MITRE ATT&CK. "
          "Proporcionas información clara y precisa sobre técnicas de ataque, "
@@ -32,15 +32,14 @@ TEXTO = ("Eres un asistente experto en MITRE ATT&CK. "
          " pueda implementar las recomendaciones fácilmente."
         )
 
-# Cargar variables de entorno
-load_dotenv()
-embedding_model = OpenAIEmbeddings(model="text-embedding-3-small",
-                                   api_key=os.environ["OPENAI_API_KEY"])
-
 # Cargar el índice previamente generado
-def load_index():
+def load_index(vector_store_path, embedding_model_param):
     """
     Carga el índice previamente generado desde el almacenamiento local.
+
+    Args:
+        vector_store_path (str): Path al directorio del vector store.
+        embedding_model: Modelo de embeddings a utilizar.
 
     Returns:
         local_vector_store: El índice cargado desde el almacenamiento local.
@@ -48,32 +47,29 @@ def load_index():
     try:
         local_vector_store = Chroma(
             collection_name="mitre_attack_techniques",
-            embedding_function=embedding_model,
-            persist_directory="vector_store_mitre"
+            embedding_function=embedding_model_param,
+            persist_directory=vector_store_path
         )
-        print("Índice cargado correctamente.")
+        print("Índice cargado correctamente desde:", vector_store_path)
         return local_vector_store
-    except Exception as error:
+    except FileNotFoundError as error:
         print("Error al cargar el índice:", error)
         sys.exit("Asegúrate de haber generado el índice correctamente con el módulo de indexación.")
 
-vector_store = load_index()
-
-# Configuración del modelo
-llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"])
-
 # Función para construir el contexto dinámico
-def build_context(user_query):
+def build_context(user_query, local_vector_store, num_similar_docs):
     """
     Recupera documentos relevantes y construye un contexto enriquecido con datos relacionados.
 
     Args:
-        query (str): La consulta del usuario.
+        user_query (str): La consulta del usuario.
+        vector_store: Vector store para realizar la búsqueda de similitud.
+        num_similar_docs (int): Número de documentos a recuperar.
 
     Returns:
         str: El contexto enriquecido.
     """
-    docs = vector_store.similarity_search(user_query, k=6)
+    docs = local_vector_store.similarity_search(user_query, k=num_similar_docs)
     context = ""
     for doc in docs:
         mitigation_details = "\n".join(
@@ -94,7 +90,7 @@ def build_context(user_query):
     return context
 
 # Lógica del chatbot
-def call_model(message_state: MessagesState):
+def call_model(message_state: MessagesState, local_vector_store, num_similar):
     """
     Llama al modelo de lenguaje con el estado actual de los mensajes.
 
@@ -113,7 +109,7 @@ def call_model(message_state: MessagesState):
     ])
 
     # Construir contexto relevante
-    context = build_context(user_query)
+    context = build_context(user_query, local_vector_store, num_similar)
 
     # Generar el prompt con historial y contexto
     prompt = (
@@ -129,16 +125,62 @@ def call_model(message_state: MessagesState):
     message_state["messages"].append(SystemMessage(content=response_content))
     return {"messages": message_state["messages"]}
 
-# Configuración principal
-memory = MemorySaver()
-workflow = StateGraph(state_schema=MessagesState)
-workflow.add_edge(START, "model")
-workflow.add_node("model", call_model)
-app = workflow.compile(checkpointer=memory)
-config = {"configurable": {"thread_id": "1111"}}
+# Argumentos de línea de comandos
+def parse_args():
+    """
+    Parsea los argumentos de línea de comandos.
 
+    Returns:
+        argparse.Namespace: Un objeto que contiene los argumentos de línea de comandos.
+    """
+    parser = argparse.ArgumentParser(description='Chatbot experto en MITRE ATT&CK.')
+    parser.add_argument('-v', '--vector-store',
+                        type=str, default='vector_store_mitre', required=False,
+                        help='Path al directorio con el vector store Chroma.')
+    parser.add_argument('-o', '--openai',
+                        action='store_true', required=False, default=True,
+                        help=('Usa los embedding model del API de OpenAI '
+                              '(requiere aportar API key en .env).'))
+    parser.add_argument('-s', '--sentence-transformers',
+                        action='store_true', required=False, default=False,
+                        help='Usa los embedding models locales de Sentence Transformers.')
+    parser.add_argument('-n', '--num-similares',
+                        type=int, default=6, required=False,
+                        help='Número de documentos a utilizar en el contexto.')
+    parser.add_argument('-d', '--debug',
+                        action='store_true', required=False, default=False,
+                        help='Activar DEBUG en los pasos del RAG.')
+    return parser.parse_args()
+
+# Configuración principal
 if __name__ == "__main__":
-    # Función principal para interactuar con el chatbot
+    args = parse_args()
+    load_dotenv()
+
+    # Configurar embeddings según el argumento proporcionado
+    EMBEDDING_MODEL = None
+    if args.openai:
+        EMBEDDING_MODEL = OpenAIEmbeddings(model="text-embedding-3-small",
+                                           api_key=os.environ["OPENAI_API_KEY"])
+    elif args.sentence_transformers:
+        raise NotImplementedError("El soporte para Sentence Transformers aún no está implementado.")
+
+    # Cargar el índice
+    vector_store = load_index(args.vector_store, EMBEDDING_MODEL)
+
+    # Configurar el modelo de lenguaje
+    llm = ChatOpenAI(model="gpt-4o-mini", api_key=os.environ["OPENAI_API_KEY"])
+
+    # Inicializar el flujo de trabajo del chatbot
+    memory = MemorySaver()
+    workflow = StateGraph(state_schema=MessagesState)
+    workflow.add_edge(START, "model")
+    workflow.add_node("model", lambda message_state: call_model(message_state,
+                                                                local_vector_store=vector_store,
+                                                                num_similar=args.num_similares))
+    app = workflow.compile(checkpointer=memory)
+    config = {"configurable": {"thread_id": "1111"}}
+
     print("\n======= CHATBOT EXPERTO EN MITRE ATT&CK =======")
     print("Hazme preguntas sobre tácticas, técnicas o contramedidas.")
     print("Finaliza la sesión con los comandos :salir, :exit o :terminar.")
@@ -148,7 +190,7 @@ if __name__ == "__main__":
     while True:
         query = input("\n>> Usuario: ")
         if query.lower() in [":salir", ":exit", ":terminar"]:
-            print("\nGracias por hablar conmigo. ¡Hasta luego!")
+            print("\n>> Asistente: Gracias por hablar conmigo. ¡Hasta luego!")
             break
 
         state["messages"].append(HumanMessage(content=query))
