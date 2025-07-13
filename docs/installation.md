@@ -10,25 +10,23 @@ This guide will help you install and set up the MITRE ATT&CK Expert Chatbot on y
 - **Storage**: At least 2GB free space
 - **Internet Connection**: Required for OpenAI API and initial setup
 
-## Installation Methods
-
-### Method 1: Quick Install (Recommended)
+## Installation
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/mitre-attack-chatbot.git
+   git clone git@github.com:santipvz/mitre-attack-chatbot.git
    cd mitre-attack-chatbot
    ```
 
 2. **Create a virtual environment**
    ```bash
-   python -m venv mitre_env
+   python3 -m venv .venv
    
    # On Windows
-   mitre_env\Scripts\activate
+   .venv\Scripts\activate
    
    # On macOS/Linux
-   source mitre_env/bin/activate
+   source .venv/bin/activate
    ```
 
 3. **Install dependencies**
@@ -44,34 +42,12 @@ This guide will help you install and set up the MITRE ATT&CK Expert Chatbot on y
 
 5. **Generate the index**
    ```bash
-   python src/indexer.py
+   python3 src/indexer.py
    ```
 
 6. **Run the chatbot**
    ```bash
-   python src/chatbot.py
-   ```
-
-### Method 2: Development Install
-
-If you plan to contribute or modify the code:
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/mitre-attack-chatbot.git
-   cd mitre-attack-chatbot
-   ```
-
-2. **Create virtual environment**
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # or venv\Scripts\activate on Windows
-   ```
-
-3. **Install in development mode**
-   ```bash
-   pip install -e .
-   pip install -r requirements-dev.txt  # If available
+   python3 src/chatbot.py
    ```
 
 ## Configuration
@@ -105,13 +81,13 @@ Test your installation:
 
 ```bash
 # Test the indexer
-python src/indexer.py --help
+python3 src/indexer.py --help
 
 # Test the chatbot
-python src/chatbot.py --help
+python3 src/chatbot.py --help
 
 # Run basic tests (if available)
-python -m pytest tests/
+python3 -m pytest tests/
 ```
 
 ## Troubleshooting

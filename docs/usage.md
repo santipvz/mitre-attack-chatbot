@@ -6,12 +6,12 @@ This guide provides detailed instructions on how to use the MITRE ATT&CK Expert 
 
 1. **Generate the index** (first time only):
    ```bash
-   python src/indexer.py
+   python3 src/indexer.py
    ```
 
 2. **Start the chatbot**:
    ```bash
-   python src/chatbot.py
+   python3 src/chatbot.py
    ```
 
 3. **Ask questions** about MITRE ATT&CK:
@@ -27,7 +27,7 @@ This guide provides detailed instructions on how to use the MITRE ATT&CK Expert 
 The simplest way to index MITRE ATT&CK data:
 
 ```bash
-python src/indexer.py
+python3 src/indexer.py
 ```
 
 This will:
@@ -39,22 +39,22 @@ This will:
 
 **Use custom data file:**
 ```bash
-python src/indexer.py -t /path/to/custom_techniques.json
+python3 src/indexer.py -t /path/to/custom_techniques.json
 ```
 
 **Use local embeddings (no API key required):**
 ```bash
-python src/indexer.py -s
+python3 src/indexer.py -s
 ```
 
 **Custom vector store location:**
 ```bash
-python src/indexer.py -v /custom/path/vector_store
+python3 src/indexer.py -v /custom/path/vector_store
 ```
 
 **Force re-indexing:**
 ```bash
-python src/indexer.py --force
+python3 src/indexer.py --force
 ```
 
 ### Indexing Performance
@@ -75,7 +75,7 @@ python src/indexer.py --force
 
 Start the chatbot:
 ```bash
-python src/chatbot.py
+python3 src/chatbot.py
 ```
 
 **Example conversation:**
@@ -94,22 +94,22 @@ python src/chatbot.py
 
 **Use custom vector store:**
 ```bash
-python src/chatbot.py -v /path/to/custom_vector_store
+python3 src/chatbot.py -v /path/to/custom_vector_store
 ```
 
 **Increase context size:**
 ```bash
-python src/chatbot.py -n 10  # Use 10 similar documents instead of 6
+python3 src/chatbot.py -n 10  # Use 10 similar documents instead of 6
 ```
 
 **Use local embeddings:**
 ```bash
-python src/chatbot.py -s
+python3 src/chatbot.py -s
 ```
 
 **Enable debug mode:**
 ```bash
-python src/chatbot.py --debug
+python3 src/chatbot.py --debug
 ```
 
 ### Query Types
@@ -216,8 +216,8 @@ Both `indexer.py` and `chatbot.py` support command line arguments:
 
 ```bash
 # View all options
-python src/indexer.py --help
-python src/chatbot.py --help
+python3 src/indexer.py --help
+python3 src/chatbot.py --help
 ```
 
 ## Troubleshooting
@@ -226,7 +226,7 @@ python src/chatbot.py --help
 
 **1. "Index not found" error:**
 ```bash
-python src/indexer.py  # Generate the index first
+python3 src/indexer.py  # Generate the index first
 ```
 
 **2. Slow responses:**
@@ -248,7 +248,7 @@ python src/indexer.py  # Generate the index first
 Enable debug mode for detailed information:
 
 ```bash
-python src/chatbot.py --debug
+python3 src/chatbot.py --debug
 ```
 
 This shows:
@@ -284,5 +284,5 @@ To use custom MITRE data:
 2. Include required fields: `id`, `name`, `description`, etc.
 3. Index with custom file:
    ```bash
-   python src/indexer.py -t custom_data.json
+   python3 src/indexer.py -t custom_data.json
    ```

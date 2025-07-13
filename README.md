@@ -26,7 +26,7 @@ An intelligent chatbot specialized in the **MITRE ATT&CK** framework, built with
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/mitre-attack-chatbot.git
+   git clone git@github.com:santipvz/mitre-attack-chatbot.git
    cd mitre-attack-chatbot
    ```
 
@@ -44,12 +44,12 @@ An intelligent chatbot specialized in the **MITRE ATT&CK** framework, built with
 
 4. **Generate the index**
    ```bash
-   python indexer.py
+   python3 indexer.py
    ```
 
 5. **Run the chatbot**
    ```bash
-   python chatbot.py
+   python3 chatbot.py
    ```
 
 ## 📁 Project Structure
@@ -90,12 +90,12 @@ mitre-attack-chatbot/
 Before using the chatbot, you need to index the MITRE ATT&CK data:
 
 ```bash
-python indexer.py
+python3 indexer.py
 ```
 
 **Indexing Options:**
 ```bash
-python indexer.py -h
+python3 indexer.py -h
 
 usage: indexer.py [-h] [-t TECHNIQUES] [-v VECTOR_STORE] [-o] [-s]
 
@@ -117,12 +117,12 @@ options:
 Once the index is generated, run the chatbot:
 
 ```bash
-python chatbot.py
+python3 chatbot.py
 ```
 
 **Chatbot Options:**
 ```bash
-python chatbot.py -h
+python3 chatbot.py -h
 
 usage: chatbot.py [-h] [-v VECTOR_STORE] [-o] [-s] [-n NUM_SIMILAR] [-d]
 
