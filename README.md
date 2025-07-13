@@ -1,155 +1,178 @@
-# Chatbot Experto en MITRE ATT&CK
+# MITRE ATT&CK Expert Chatbot
 
-Este proyecto implementa un chatbot experto en el framework **MITRE ATT&CK**, utilizando tecnologías avanzadas como **OpenAI**, **LangChain** y **Chroma** para ofrecer respuestas claras y precisas sobre técnicas de ataque, tácticas y contramedidas. Además, el chatbot incluye memoria para recordar el contexto de las conversaciones.
+[![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)](https://www.python.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-green.svg)](https://openai.com/)
 
-## Características
+An intelligent chatbot specialized in the **MITRE ATT&CK** framework, built with advanced technologies like **OpenAI**, **LangChain**, and **Chroma** to provide clear and precise answers about attack techniques, tactics, and countermeasures. The chatbot includes conversational memory to maintain context across sessions.
 
-- **Conocimiento basado en MITRE ATT&CK**: Proporciona información detallada sobre técnicas, tácticas y mitigaciones.
-- **Memoria conversacional**: Recuerda el contexto y detalles relevantes dentro de una sesión.
-- **Optimización de consultas**: Utiliza Chroma para búsquedas rápidas y eficaces dentro del índice de datos.
-- **Modelos OpenAI**: Se apoya en modelos ligeros y económicos, como `gpt-4o-mini` para el chatbot y `text-embedding-3-small` para los embeddings.
+## 🌟 Features
 
----
+- **MITRE ATT&CK Knowledge Base**: Provides detailed information about techniques, tactics, and mitigations
+- **Conversational Memory**: Remembers context and relevant details within a session
+- **Query Optimization**: Uses Chroma for fast and efficient searches within the data index
+- **OpenAI Models**: Leverages lightweight and cost-effective models like `gpt-4o-mini` for chat and `text-embedding-3-small` for embeddings
+- **CLI Interface**: Command-line interface with multiple configuration options
+- **Flexible Embedding Options**: Support for both OpenAI and local Sentence Transformers models
 
-## Requisitos
+## 🚀 Quick Start
 
-### Dependencias
+### Prerequisites
 
-Este proyecto utiliza las siguientes librerías y herramientas:
+- Python 3.8 or higher
+- OpenAI API Key (for OpenAI embeddings and chat model)
+
+### Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/mitre-attack-chatbot.git
+   cd mitre-attack-chatbot
+   ```
+
+2. **Install dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. **Set up environment variables**
+   
+   Create a `.env` file in the root directory:
+   ```env
+   OPENAI_API_KEY=your_openai_api_key_here
+   ```
+
+4. **Generate the index**
+   ```bash
+   python indexer.py
+   ```
+
+5. **Run the chatbot**
+   ```bash
+   python chatbot.py
+   ```
+
+## 📁 Project Structure
 
 ```
-chromadb
-jq
-langchain
-langchain-chroma
-langchain-community
-langchain_core
-langchain-huggingface
-langchain-mistralai
-langchain_openai
-langchain-text-splitters
-langchain_community
-langgraph
-python-dotenv
+mitre-attack-chatbot/
+├── src/
+│   ├── __init__.py
+│   ├── chatbot.py              # Main chatbot module
+│   ├── indexer.py              # Data indexing module
+│   ├── config.py               # Configuration settings
+│   └── utils/
+│       ├── __init__.py
+│       └── text_processing.py  # Text processing utilities
+├── data/
+│   └── techniques_enterprise_attack.json  # MITRE ATT&CK data
+├── tests/
+│   ├── __init__.py
+│   ├── test_chatbot.py
+│   └── test_indexer.py
+├── docs/
+│   ├── installation.md
+│   ├── usage.md
+│   └── api_reference.md
+├── vector_store_mitre/         # Generated vector store (after indexing)
+├── .env.example               # Environment variables template
+├── .gitignore                # Git ignore file
+├── requirements.txt          # Python dependencies
+├── setup.py                 # Package setup
+├── README.md               # This file
+└── LICENSE                # MIT License
 ```
 
-Instálalas con:
+## 🔧 Usage
 
-```bash
-pip install -r requirements.txt
-```
+### Indexing MITRE ATT&CK Data
 
-### Variables de Entorno
-
-Crea un archivo `.env` en el directorio raíz con la siguiente configuración:
-
-```
-OPENAI_API_KEY=tu_clave_api_de_openai
-```
-
-Reemplaza `tu_clave_api_de_openai` con tu clave de API válida.
-
----
-
-## Estructura del Proyecto
-
-```
-project/
-├── chatbot.py       # Módulo principal del chatbot
-├── indexer.py       # Módulo para indexar datos JSON
-├── techniques_enterprise_attack.json # Archivo con datos de MITRE ATT&CK
-├── requirements.txt # Dependencias del proyecto
-├── .env             # Variables de entorno
-└── README.md        # Documentación del proyecto
-```
-
----
-
-## Uso
-
-### 1. Generar el Índice
-
-Antes de usar el chatbot, es necesario indexar los datos de **MITRE ATT&CK**. Ejecuta el módulo de indexación:
+Before using the chatbot, you need to index the MITRE ATT&CK data:
 
 ```bash
 python indexer.py
 ```
 
-Esto creará un índice local utilizando **Chroma** llamado `vector_store_mitre`.
-
-Si deseas personalizar la indexación, puedes usar las siguientes opciones:
-
+**Indexing Options:**
 ```bash
 python indexer.py -h
 
 usage: indexer.py [-h] [-t TECHNIQUES] [-v VECTOR_STORE] [-o] [-s]
 
-Indexación de técnicas MITRE ATT&CK en formato JSON con embeddings y Chroma
+Index MITRE ATT&CK techniques from JSON format with embeddings and Chroma
 
 options:
   -h, --help            show this help message and exit
   -t TECHNIQUES, --techniques TECHNIQUES
-                        Path al fichero con las técnicas de MITRE ATT&CK en formato JSON
+                        Path to the MITRE ATT&CK techniques JSON file
   -v VECTOR_STORE, --vector-store VECTOR_STORE
-                        Path al directorio con el vector store Chroma (lo crea si no existe)
-  -o, --openai          Usa los embedding model del API de OpenAI
+                        Path to the Chroma vector store directory (creates if not exists)
+  -o, --openai          Use OpenAI embedding models
   -s, --sentence-transformers
-                        Usa los embedding models locales de Sentence Transformers
+                        Use local Sentence Transformers embedding models
 ```
 
-### 2. Ejecutar el Chatbot
+### Running the Chatbot
 
-Una vez generado el índice, ejecuta el chatbot:
+Once the index is generated, run the chatbot:
 
 ```bash
 python chatbot.py
 ```
 
-Si deseas personalizar los parametros o funcionamiento del chatbot, puedes usar las siguientes opciones:
-
+**Chatbot Options:**
 ```bash
-usage: chatbot.py [-h] [-v VECTOR_STORE] [-o] [-s] [-n NUM_SIMILARES] [-d]
+python chatbot.py -h
 
-Chatbot experto en MITRE ATT&CK.
+usage: chatbot.py [-h] [-v VECTOR_STORE] [-o] [-s] [-n NUM_SIMILAR] [-d]
+
+MITRE ATT&CK Expert Chatbot
 
 options:
   -h, --help            show this help message and exit
   -v VECTOR_STORE, --vector-store VECTOR_STORE
-                        Path al directorio con el vector store Chroma.
-  -o, --openai          Usa los embedding model del API de OpenAI (requiere aportar API key en .env).
+                        Path to the Chroma vector store directory
+  -o, --openai          Use OpenAI embedding models (requires API key in .env)
   -s, --sentence-transformers
-                        Usa los embedding models locales de Sentence Transformers.
-  -n NUM_SIMILARES, --num-similares NUM_SIMILARES
-                        Número de documentos a utilizar en el contexto.
-  -d, --debug           Activar DEBUG en los pasos del RAG.
+                        Use local Sentence Transformers embedding models
+  -n NUM_SIMILAR, --num-similar NUM_SIMILAR
+                        Number of documents to use in context
+  -d, --debug           Enable DEBUG mode for RAG steps
 ```
 
-El chatbot estará listo para responder preguntas como:
+### Example Queries
 
-- "¿Qué es la técnica T1059?"
-- "¿Cuáles son las mitigaciones para Credential Dumping?"
+The chatbot can answer questions like:
+- "What is technique T1059?"
+- "What are the mitigations for Credential Dumping?"
+- "How does PowerShell relate to MITRE ATT&CK?"
+- "Show me detection methods for lateral movement"
 
-### 3. Finalizar Sesión
+### Session Commands
 
-Usa los comandos `:salir`, `:exit` o `:terminar` para cerrar la sesión.
+- `:exit`, `:quit`, or `:terminate` - End the chat session
 
----
+## 🛠️ Configuration
 
-## Mantenimiento y Extensibilidad
+### Environment Variables
 
-### Ampliar Datos
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `OPENAI_API_KEY` | Your OpenAI API key | Yes (for OpenAI models) |
 
-Puedes actualizar el archivo `techniques_enterprise_attack.json` con datos adicionales de MITRE ATT&CK antes de indexar nuevamente.
+### Model Configuration
 
-### Seguridad
+The chatbot supports two embedding options:
 
-El índice generado utiliza archivos persistidos por Chroma. Asegúrate de confiar en la fuente de los datos antes de cargarlo.
+1. **OpenAI Embeddings** (default, requires API key)
+   - Model: `text-embedding-3-small`
+   - Higher quality but requires internet connection
 
----
+2. **Local Sentence Transformers** (offline)
+   - Model: `sentence-transformers/all-MiniLM-L6-v2`
+   - No API key required, runs locally
 
-## Créditos
 
-- **LangChain y LangGraph** para la creación del grafo de estados y gestión del flujo conversacional.
-- **Chroma** para un acceso rápido a los datos indexados.
-- **OpenAI** para los modelos de lenguaje y embeddings.
+## 📝 License
 
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
