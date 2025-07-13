@@ -68,17 +68,16 @@ mitre-attack-chatbot/
 │   └── techniques_enterprise_attack.json  # MITRE ATT&CK data
 ├── tests/
 │   ├── __init__.py
-│   ├── test_chatbot.py
-│   └── test_indexer.py
+│   ├── test_chatbot.py         # Chatbot functionality tests
+│   ├── test_indexer.py         # Indexer functionality tests
+│   └── test_text_processing.py # Text processing tests
 ├── docs/
-│   ├── installation.md
-│   ├── usage.md
-│   └── api_reference.md
+│   ├── installation.md         # Installation guide
+│   └── usage.md               # Usage documentation
 ├── vector_store_mitre/         # Generated vector store (after indexing)
 ├── .env.example               # Environment variables template
 ├── .gitignore                # Git ignore file
 ├── requirements.txt          # Python dependencies
-├── setup.py                 # Package setup
 ├── README.md               # This file
 └── LICENSE                # MIT License
 ```
